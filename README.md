@@ -4,7 +4,7 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16+-blue.svg)](https://www.postgresql.org/)
 [![EF Core](https://img.shields.io/badge/EF%20Core-9.0-blueviolet.svg)](https://learn.microsoft.com/en-us/ef/core/)
 [![Scalar OpenAPI](https://img.shields.io/badge/API%20Docs-Scalar-green.svg)](https://scalar.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
 
 > **Document ID:** `LEDGERAI-ROOT-BLUEPRINT-2026-V2.2`  
 > **Repository Scope:** Monolith Root Repository (Documentation, Database Architecture, Backend Engine & PWA Contracts)  
@@ -750,4 +750,4 @@ This monolith implementation traces directly to the requirements in [`Docs/Pdfs/
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is **proprietary and confidential**. All rights reserved. See [LICENSE](LICENSE) for details.
