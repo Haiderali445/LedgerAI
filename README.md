@@ -6,47 +6,101 @@
 [![Scalar OpenAPI](https://img.shields.io/badge/API%20Docs-Scalar-green.svg)](https://scalar.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> **Document ID:** `LEDGERAI-BLUEPRINT-2026-V2.1`  
-> **Academic Baseline:** Final Year Project (FYP) — Department of Software Engineering, University of Gujrat  
-> **Team:** Haider Ali (`23014198-097`), Ibtisam Kashif (`23014198-083`), Fazina Mukhtar (`23014198-088`)  
-> **Supervisor:** Prof. Muhammad Tauqeer ul Amin  
+> **Document ID:** `LEDGERAI-ROOT-BLUEPRINT-2026-V2.2`  
+> **Repository Scope:** Monolith Root Repository (Documentation, Database Architecture, Backend Engine & PWA Contracts)  
+> **Academic Baseline:** Final Year Project (FYP) — Department of Software Engineering, Faculty of Computing & Information Technology, University of Gujrat, Punjab, Pakistan  
+> **Standard Compliance:** IEEE Std 830-1998 / ISO/IEC/IEEE 29148:2018  
+> **Project Team:**  
+> * **Haider Ali** (`23014198-097`) — Project Manager, Backend Architect & Database Engineer  
+> * **Ibtisam Kashif** (`23014198-083`) — AI Orchestration, NLP Pipeline & QA Engineer  
+> * **Fazina Mukhtar** (`23014198-088`) — Frontend Lead (React PWA) & UX Engineer  
+> 
+> **Supervised By:** Prof. Muhammad Tauqeer ul Amin  
+
+---
+
+## 📚 Complete Project Documentation Index & Artifact References
+
+This repository is organized as a single modular monolith containing all design artifacts, mathematical specifications, PostgreSQL schemas, and backend code. All authoritative reference documents are available in the repository:
+
+| Document / Artifact | Location | Description & Engineering Purpose |
+| :--- | :--- | :--- |
+| **System Design & Architecture Specification** | [`Docs/Pdfs/ledgerai_complete_system_design_architecture_specification.md`](Docs/Pdfs/ledgerai_complete_system_design_architecture_specification.md) | Authoritative Five-Tier distributed modular monolith architecture, design patterns, and deployment blueprint. |
+| **Software Requirements Specification (SRS)** | [`Docs/Pdfs/ledgerai_complete_software_requirements_specification_srs.md`](Docs/Pdfs/ledgerai_complete_software_requirements_specification_srs.md) | IEEE 830 / ISO 29148 compliant requirements specification (`FR-AUTH`, `FR-CAT`, `FR-INV`, `FR-ACC`, `FR-ORD`, `FR-BIL`, `FR-AI`, `FR-OPS`). |
+| **Formal SRS Document (PDF)** | [`Docs/Pdfs/LedgerAI Complete Software Requirements Specification (SRS).pdf`](Docs/Pdfs/LedgerAI%20Complete%20Software%20Requirements%20Specification%20(SRS).pdf) | Formatted academic evaluation document with complete functional and non-functional requirements. |
+| **Master Database DDL (PostgreSQL 16+)** | [`Docs/Schemas/LedgerAI_Schema_v2.sql`](Docs/Schemas/LedgerAI_Schema_v2.sql) | Production PostgreSQL 16+ DDL: 21 relational tables, composite tenant foreign keys, `FORCE RLS`, triggers, and atomic functions. |
+| **System Component Diagram** | [`Docs/Diagrams/component diagram.png`](Docs/Diagrams/component%20diagram.png) | Visual subsystem component layout across client, gateway, AI agents, ERP core, and database. |
+| **Mathematics, Calculations & Categories** | [`Docs/Pdfs/Mathematics Calculations and Categories.pdf`](Docs/Pdfs/Mathematics%20Calculations%20and%20Categories.pdf) | Mathematical formulas for two-tier UOM conversions, landed cost proration, WAC, and *Udhaar Khata* aging/risk rules. |
+| **Team Execution Plan & Sprint Roadmap** | [`Docs/Pdfs/LedgerAI_Team_Execution_Plan.pdf`](Docs/Pdfs/LedgerAI_Team_Execution_Plan.pdf) | Sprint execution milestones, responsibilities, deliverables, and timeline. |
+| **Final Year Project Proposal (Approved)** | [`Docs/Pdfs/PROPOSL _final_ledgerai.pdf`](Docs/Pdfs/PROPOSL%20_final_ledgerai.pdf) | University of Gujrat approved proposal document establishing project background, problem statement, and scope. |
+| **Backend API Host Setup & Manifest** | [`LedgerAI.Api/README.md`](LedgerAI.Api/README.md) | .NET 9 Web API setup, launch profiles, NuGet manifest, and endpoint verification guide. |
 
 ---
 
 ## Table of Contents
-1. [Executive Overview & Core Principles](#1-executive-overview--core-principles)
+1. [Executive Overview & Core Architectural Philosophy](#1-executive-overview--core-architectural-philosophy)
 2. [Five-Tier System Architecture](#2-five-tier-system-architecture)
 3. [Software Design Patterns Applied](#3-software-design-patterns-applied)
-4. [Complete Repository & Backend Structure](#4-complete-repository--backend-structure)
+4. [Complete Monolith Codebase & Folder Hierarchy](#4-complete-monolith-codebase--folder-hierarchy)
 5. [Database Architecture (PostgreSQL 16+)](#5-database-architecture-postgresql-16)
    - [5.1 Entity-Relationship Diagram (EERD)](#51-entity-relationship-diagram-eerd)
-   - [5.2 21-Table Schema Breakdown & Constraints](#52-21-table-schema-breakdown--constraints)
+   - [5.2 21-Table Schema Matrix & Integrity Invariants](#52-21-table-schema-matrix--integrity-invariants)
    - [5.3 Row-Level Security (RLS) & Concurrency Engine](#53-row-level-security-rls--concurrency-engine)
-6. [End-to-End System Workflows & Sequence Diagrams](#6-end-to-end-system-workflows--sequence-diagrams)
-   - [6.1 Conversational AI Ingestion Pipeline](#61-conversational-ai-ingestion-pipeline)
+6. [End-to-End System Workflows & Visual Diagrams](#6-end-to-end-system-workflows--visual-diagrams)
+   - [6.1 Conversational AI Ingestion Sequence Flow](#61-conversational-ai-ingestion-sequence-flow)
    - [6.2 Order Lifecycle State Machine](#62-order-lifecycle-state-machine)
    - [6.3 Dual-Series Invoicing (`00`/`01`) & FIFO Settlement](#63-dual-series-invoicing-0001--fifo-settlement)
 7. [Domain Mathematical, Accounting & Risk Engine](#7-domain-mathematical-accounting--risk-engine)
 8. [Multi-Agent AI Orchestration & Telemetry](#8-multi-agent-ai-orchestration--telemetry)
-9. [Technology Stack & NuGet Package Manifest](#9-technology-stack--nuget-package-manifest)
-10. [Local Development & Quick-Start Guide](#10-local-development--quick-start-guide)
+9. [Functional & Non-Functional Requirements Summary](#9-functional--non-functional-requirements-summary)
+10. [Technology Stack & Package Manifest](#10-technology-stack--package-manifest)
+11. [Local Development & Quick-Start Guide](#11-local-development--quick-start-guide)
 
 ---
 
-## 1. Executive Overview & Core Principles
+## 1. Executive Overview & Core Architectural Philosophy
 
-**LedgerAI** is an event-driven, multi-tenant B2B wholesale Enterprise Resource Planning (ERP), inventory management engine, and digital *Udhaar Khata* (credit ledger) system engineered for Pakistani commodity and FMCG distribution networks. It pairs deterministic transactional accounting with human-in-the-loop agentic AI to automate high-friction operations like informal Roman Urdu WhatsApp voice/text ordering, First-Expired-First-Out (FEFO) stock reservation, and First-In-First-Out (FIFO) invoice-ledger allocations.
+**LedgerAI** is an event-driven, multi-tenant B2B wholesale Enterprise Resource Planning (ERP), inventory management engine, and digital *Udhaar Khata* (credit ledger) system engineered for Pakistani commodity and FMCG wholesale distribution networks. It bridges informal traditional market communications (Roman Urdu text and voice notes over WhatsApp) with deterministic, hardened double-entry style accounting.
 
-```text
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                            LEDGERAI CORE PHILOSOPHY                         │
-│                                                                             │
-│   Conversational AI (Messy Ingress) ──► Strict Validation & Airgap Gates    │
-│                                                     │                       │
-│                                                     ▼                       │
-│   Deterministic Core ◄── Unit of Work ◄── PostgreSQL Atomic Locks & Force RLS│
-│   (Zero AI Dependency)                                                      │
-└─────────────────────────────────────────────────────────────────────────────┘
+### Core Philosophy: The Deterministic Airgap Flow
+
+```mermaid
+flowchart LR
+    subgraph Ingress["1. Conversational Ingress (Messy & Informal)"]
+        RawInput["WhatsApp Audio / Roman Urdu Text\n('50 bori chini bhej dein')"]
+        STT["Whisper STT Audio Transcription\n(.ogg / .wav / .mp3)"]
+        RawInput --> STT
+    end
+
+    subgraph Airgap["2. Strict Validation & Airgap Gates"]
+        Sanitize["TextSanitizerPipeline\n(Injection Guard & Normalizer)"]
+        LLM["IntentExtractorAgent\n(Groq LPU / JSON Schema Mode)"]
+        Gate["IntentValidationPipeline\n(Confidence >= 0.85 & Credit Check)"]
+        STT --> Sanitize --> LLM --> Gate
+    end
+
+    subgraph Core["3. Deterministic ERP Core (Unit of Work)"]
+        Supervisor["SupervisorAgent\n(Typed C# Tool Caller)"]
+        Services["Domain Services\n(Catalog, Inventory, Accounts, Orders, Invoicing)"]
+        Gate -->|"High Confidence & In-Credit"| Supervisor --> Services
+        Gate -.->|"Low Confidence or Over-Credit"| Approval["Human Approval Queue\n(PENDING_APPROVAL)"]
+        Approval -.->|"Manager Approved"| Services
+    end
+
+    subgraph Engine["4. PostgreSQL 16+ Persistence Engine"]
+        Atomic["Atomic Stored Procedures\n(fn_reserve_batch_stock, fn_apply_balance_delta)"]
+        RLS["FORCE ROW LEVEL SECURITY\n(SET LOCAL app.current_tenant)"]
+        Triggers["Database Triggers & FIFO Allocations\n(trg_sync_stock_items, trg_audit_immutable)"]
+        Services --> Atomic --> RLS --> Triggers
+    end
+
+    subgraph Outbox["5. Transactional Outbox & Telemetry"]
+        OutboxTable["outbox_events Table"]
+        Worker["OutboxDispatcherWorker"]
+        SignalR["SignalR LedgerHub\n(Live UI Trace)"]
+        WhatsApp["WhatsApp Outbound Reply\n(Order Confirmation)"]
+        Triggers --> OutboxTable --> Worker --> SignalR & WhatsApp
+    end
 ```
 
 ### Core Architectural Principles
@@ -146,9 +200,9 @@ flowchart TB
 
 ---
 
-## 4. Complete Repository & Backend Structure
+## 4. Complete Monolith Codebase & Folder Hierarchy
 
-The workspace is organized into a clean root directory containing project documentation and the `.NET 9` Web API project:
+The repository structure reflects the unified monolith architecture: documentation and schemas live at the root, while the backend code resides within `LedgerAI.Api/src/`:
 
 ```text
 LedgerAI/                                           # Root Repository Directory (C:\projects\LedgerAi\)
@@ -167,7 +221,7 @@ LedgerAI/                                           # Root Repository Directory 
 │
 ├── .gitignore                                      # Root Git Ignore (.NET, VS, VS Code, Environment, Logs)
 ├── LICENSE                                         # MIT License
-├── README.md                                       # Master System Blueprint & Architectural Documentation
+├── README.md                                       # Master Monolith System Blueprint & Architectural Documentation
 │
 └── LedgerAI.Api/                                   # .NET 9 Web API Host Project Root
     ├── LedgerAI.Api.csproj                         # TargetFramework net9.0 + NuGet Package References
@@ -371,7 +425,7 @@ erDiagram
     TENANTS ||--o{ AUDIT_LOGS : "append_only_audit"
 ```
 
-### 5.2 21-Table Schema Breakdown & Constraints
+### 5.2 21-Table Schema Matrix & Integrity Invariants
 
 | # | Table Name | Domain | Primary Purpose & Key Constraints |
 | :---: | :--- | :--- | :--- |
@@ -419,9 +473,9 @@ erDiagram
 
 ---
 
-## 6. End-to-End System Workflows & Sequence Diagrams
+## 6. End-to-End System Workflows & Visual Diagrams
 
-### 6.1 Conversational AI Ingestion Pipeline
+### 6.1 Conversational AI Ingestion Sequence Flow
 
 ```mermaid
 sequenceDiagram
@@ -511,28 +565,29 @@ flowchart LR
 
 All financial and inventory computations use C# `decimal` rounded to **4 decimal places** (`MidpointRounding.AwayFromZero`) matching PostgreSQL `NUMERIC(18,4)`:
 
-1. **Two-Tier Unit Conversions:**  
+1. **Two-Tier Unit Conversions (`BR-MATH-001`):**  
    $$\text{base\_quantity} = \text{round}(\text{ordered\_quantity} \times \text{conversion\_factor}, 4)$$
+   $$\text{conversion\_factor} = \begin{cases} 1, & \text{if } \text{ordered\_unit} = \text{base\_unit} \\ \text{pack\_size}, & \text{if } \text{ordered\_unit} = \text{secondary\_unit} \end{cases}$$
    *(e.g., 50 bags $\times$ 50 kg/bag = 2,500.0000 kg base quantity)*
 
-2. **Purchase Landed Cost Proration:**  
-   For capitalizable charges $L_{\text{total}}$ (e.g., Freight, Unloading) across invoice items with total pre-tax value $V_{\text{total}}$:
+2. **Purchase Landed Cost Proration (`BR-MATH-004`):**  
+   For capitalizable charges $L_{\text{total}}$ (Freight, Labor, Weighbridge) across invoice items with pre-tax value $V_{\text{total}}$:
    $$\text{allocated\_charge}_i = \text{round}\left(L_{\text{total}} \times \frac{\text{line\_total}_i - \text{tax\_amount}_i}{V_{\text{total}}}, 4\right)$$
    $$\text{batch\_unit\_cost}_i = \text{round}\left(\frac{(\text{line\_total}_i - \text{tax\_amount}_i) + \text{allocated\_charge}_i}{\text{base\_quantity}_i}, 4\right)$$
 
 3. **Weighted Average Cost (WAC) Recalculation:**  
    $$\text{WAC}_{\text{new}} = \text{round}\left(\frac{(Q_{\text{old}} \times C_{\text{old}}) + \sum (\text{base\_quantity}_{\text{in}} \times \text{batch\_unit\_cost}_i)}{\max(Q_{\text{old}} + \sum \text{base\_quantity}_{\text{in}}, 1)}, 4\right)$$
 
-4. **Invoice Grand Total Calculation:**  
+4. **Invoice Grand Total Calculation (`BR-MATH-003`):**  
    $$\text{grand\_total} = \text{round}((\text{subtotal\_amount} - \text{discount\_amount} + \text{tax\_amount}) + C_{\text{ADD\_TO\_BILL}} - C_{\text{DEDUCT\_FROM\_BILL}}, 4)$$
 
-5. **Wholesale Charge Accounting Treatment:**
-   * `CAPITALIZE_LANDED_COST`: Added to batch unit cost and product WAC on `00` Purchase (e.g. `FREIGHT_BILTY`, `LABOR_MAZDOORI`, `WEIGHING_KANTA`).
-   * `FULFILLMENT_EXPENSE`: Deducted from gross profit on `01` Sale (e.g. `DELIVERY_OUTBOUND`).
-   * `TAX_PASS_THROUGH`: Tax liability passed to government (e.g. `WHT_236G`, `WHT_236H`).
-   * `DISCOUNT_WAIVER`: Settlement concession (e.g. `KASAR_WAIVER`).
+5. **Wholesale Charge Accounting Treatments:**
+   * `CAPITALIZE_LANDED_COST`: Added to batch unit cost and product WAC on `00` Purchase (`FREIGHT_BILTY`, `LABOR_MAZDOORI`, `WEIGHING_KANTA`).
+   * `FULFILLMENT_EXPENSE`: Deducted from gross profit on `01` Sale (`DELIVERY_OUTBOUND`).
+   * `TAX_PASS_THROUGH`: Tax liability passed to government (`WHT_236G`, `WHT_236H`).
+   * `DISCOUNT_WAIVER`: Settlement concession (`KASAR_WAIVER`).
 
-6. **Udhaar Khata Sign Convention & Credit Exposure:**
+6. **Udhaar Khata Sign Convention & Credit Exposure (`BR-MATH-005`):**
    * $\text{current\_balance} > 0\ (\text{DR})$: Customer owes business (Receivable) or advance paid to supplier.
    * $\text{current\_balance} < 0\ (\text{CR})$: Business owes supplier (Payable) or customer advance receipt.
    * $\text{credit\_exposure} = \max(\text{current\_balance}, 0) + \text{reserved\_credit}$.
@@ -582,7 +637,30 @@ AiDecisionLogger ──► SignalR LedgerHub ──► Live Dashboard Trace
 
 ---
 
-## 9. Technology Stack & NuGet Package Manifest
+## 9. Functional & Non-Functional Requirements Summary
+
+This monolith implementation traces directly to the requirements in [`Docs/Pdfs/ledgerai_complete_software_requirements_specification_srs.md`](Docs/Pdfs/ledgerai_complete_software_requirements_specification_srs.md):
+
+### Functional Requirements Matrix
+* **`FR-AUTH` (Identity & Multi-Tenancy):** JWT authentication, tenant isolation middleware, PostgreSQL connection interceptor, and 5-tier RBAC (`Owner`, `Admin`, `Manager`, `Operator`, `Viewer`).
+* **`FR-CAT` (Catalog & UOM):** Hierarchical categories, two-tier UOM conversions, fractional validation, and GIN-indexed Roman Urdu aliases.
+* **`FR-INV` (Inventory & FEFO):** Multi-warehouse stock, FEFO batch allocation, explicit stock reservations, and trigger-maintained stock totals.
+* **`FR-ACC` (Udhaar Khata & FIFO Allocations):** Unified party accounts, running balance ledger entries, and automated FIFO settlement matching payments to oldest debits.
+* **`FR-ORD` (Orders & Approval Gates):** Order lifecycle management, confidence thresholds ($\ge 0.85$), credit exposure gating, and manager approvals.
+* **`FR-BIL` (Invoicing & Wholesale Charges):** Dual-series vouchers (`00` Purchase / `01` Sale), landed cost proration, WAC recalculation, and localized charges.
+* **`FR-AI` (Agentic Ingress & Telemetry):** WhatsApp Cloud webhook HMAC verification, Whisper STT audio transcription, Groq structured JSON extraction, and live SignalR telemetry streaming.
+* **`FR-OPS` (Operational Reliability):** Transactional Outbox background processing, idempotency key deduplication, and immutable audit logging.
+
+### Non-Functional Latency & Performance Budgets
+* **`NFR-PERF-001`:** Standard CRUD endpoints achieve $< 200\text{ ms}$ p95 latency under 50 concurrent operators.
+* **`NFR-PERF-002`:** Transactional voucher postings (`01` Sale Invoice with FEFO commit, ledger debit, and outbox insert) complete in $< 400\text{ ms}$ p95.
+* **`NFR-PERF-003`:** AI text order parsing completes in $< 3.5\text{ s}$ p95; voice note audio transcription + parsing completes in $< 6.0\text{ s}$ p95.
+* **`NFR-SEC-001`:** 100% of tables enforce PostgreSQL engine `FORCE ROW LEVEL SECURITY`.
+* **`NFR-REL-001`:** Concurrency serialized via row-level locks (`fn_reserve_batch_stock`, `fn_apply_account_balance_delta`).
+
+---
+
+## 10. Technology Stack & Package Manifest
 
 ### Backend (.NET 9 Web API)
 
@@ -603,7 +681,7 @@ AiDecisionLogger ──► SignalR LedgerHub ──► Live Dashboard Trace
 
 ---
 
-## 10. Local Development & Quick-Start Guide
+## 11. Local Development & Quick-Start Guide
 
 ### Prerequisites
 * [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) (SDK `9.0.319+` or `10.0.403+` targeting `net9.0`)
