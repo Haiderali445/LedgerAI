@@ -193,7 +193,7 @@ flowchart TB
 | **Repository & Unit of Work (UoW)** | `src/Data/Repositories/` & `src/Data/UnitOfWork/` | Abstracts EF Core `DbContext` interactions and guarantees atomic multi-entity ACID transactions across modules. |
 | **Transactional Outbox Pattern** | `outbox_events` table + `src/Communication/Workers/OutboxDispatcherWorker.cs` | Guarantees reliable asynchronous delivery of WhatsApp messages and SignalR notifications without 2-phase commits. |
 | **EF Core Interceptor Pattern** | `src/Data/Interceptors/TenantRlsInterceptor.cs` | Injects `SET LOCAL app.current_tenant = '{tenantId}';` immediately on opening every connection, ensuring PostgreSQL RLS applies to all queries. |
-| **Chain of Responsibility (Pipeline)** | `src/AI/Pipelines/` (`TextSanitizer` $\rightarrow$ `IntentExtractor` $\rightarrow$ `IntentValidation`) | Sequences natural language sanitization, structured JSON schema parsing, and entity validation into isolated stages. |
+| **Chain of Responsibility (Pipeline)** | `src/AI/Pipelines/` (`TextSanitizer` → `IntentExtractor` → `IntentValidation`) | Sequences natural language sanitization, structured JSON schema parsing, and entity validation into isolated stages. |
 | **Supervisor & Tool-Calling Agent** | `src/AI/Agents/SupervisorAgent.cs` & `src/AI/Tools/` | Decouples LLM natural language reasoning from deterministic database operations using typed C# tool methods. |
 | **Circuit Breaker & Fallback Router** | `src/AI/Routers/LlmFailoverRouter.cs` (Polly v8) | Automatically fails over across Groq API keys on HTTP 429 rate limits, and routes to HuggingFace on timeouts. |
 | **Idempotency Key Pattern** | `inbound_messages.wamid`, `orders.idempotency_key`, `invoices.idempotency_key` | Guarantees exactly-once processing for webhook retries and duplicate mobile client submissions. |
@@ -469,7 +469,9 @@ erDiagram
 6. **Security-Invoker Reporting Views:**
    * `v_product_stock_totals`: Real-time on-hand, reserved, and available stock totals per product across all warehouses.
    * `v_invoice_profit_summary`: Real-time gross profit calculations per sale invoice:
-     $$\text{gross\_profit} = (\text{subtotal} - \text{discount}) - \text{total\_cogs} - \text{fulfillment\_and\_waiver\_costs}$$
+     ```
+     gross_profit = (subtotal - discount) - total_cogs - fulfillment_and_waiver_costs
+     ```
 
 ---
 
@@ -566,20 +568,29 @@ flowchart LR
 All financial and inventory computations use C# `decimal` rounded to **4 decimal places** (`MidpointRounding.AwayFromZero`) matching PostgreSQL `NUMERIC(18,4)`:
 
 1. **Two-Tier Unit Conversions (`BR-MATH-001`):**  
-   $$\text{base\_quantity} = \text{round}(\text{ordered\_quantity} \times \text{conversion\_factor}, 4)$$
-   $$\text{conversion\_factor} = \begin{cases} 1, & \text{if } \text{ordered\_unit} = \text{base\_unit} \\ \text{pack\_size}, & \text{if } \text{ordered\_unit} = \text{secondary\_unit} \end{cases}$$
-   *(e.g., 50 bags $\times$ 50 kg/bag = 2,500.0000 kg base quantity)*
+   ```
+   base_quantity = round(ordered_quantity × conversion_factor, 4)
+   conversion_factor = 1,         if ordered_unit = base_unit
+                     = pack_size,  if ordered_unit = secondary_unit
+   ```
+   *(e.g., 50 bags × 50 kg/bag = 2,500.0000 kg base quantity)*
 
 2. **Purchase Landed Cost Proration (`BR-MATH-004`):**  
-   For capitalizable charges $L_{\text{total}}$ (Freight, Labor, Weighbridge) across invoice items with pre-tax value $V_{\text{total}}$:
-   $$\text{allocated\_charge}_i = \text{round}\left(L_{\text{total}} \times \frac{\text{line\_total}_i - \text{tax\_amount}_i}{V_{\text{total}}}, 4\right)$$
-   $$\text{batch\_unit\_cost}_i = \text{round}\left(\frac{(\text{line\_total}_i - \text{tax\_amount}_i) + \text{allocated\_charge}_i}{\text{base\_quantity}_i}, 4\right)$$
+   For capitalizable charges `L_total` (Freight, Labor, Weighbridge) across invoice items with pre-tax value `V_total`:
+   ```
+   allocated_charge[i] = round(L_total × (line_total[i] - tax_amount[i]) / V_total, 4)
+   batch_unit_cost[i]  = round(((line_total[i] - tax_amount[i]) + allocated_charge[i]) / base_quantity[i], 4)
+   ```
 
 3. **Weighted Average Cost (WAC) Recalculation:**  
-   $$\text{WAC}_{\text{new}} = \text{round}\left(\frac{(Q_{\text{old}} \times C_{\text{old}}) + \sum (\text{base\_quantity}_{\text{in}} \times \text{batch\_unit\_cost}_i)}{\max(Q_{\text{old}} + \sum \text{base\_quantity}_{\text{in}}, 1)}, 4\right)$$
+   ```
+   WAC_new = round((Q_old × C_old + Σ(base_quantity_in × batch_unit_cost[i])) / max(Q_old + Σ base_quantity_in, 1), 4)
+   ```
 
 4. **Invoice Grand Total Calculation (`BR-MATH-003`):**  
-   $$\text{grand\_total} = \text{round}((\text{subtotal\_amount} - \text{discount\_amount} + \text{tax\_amount}) + C_{\text{ADD\_TO\_BILL}} - C_{\text{DEDUCT\_FROM\_BILL}}, 4)$$
+   ```
+   grand_total = round((subtotal_amount - discount_amount + tax_amount) + C_ADD_TO_BILL - C_DEDUCT_FROM_BILL, 4)
+   ```
 
 5. **Wholesale Charge Accounting Treatments:**
    * `CAPITALIZE_LANDED_COST`: Added to batch unit cost and product WAC on `00` Purchase (`FREIGHT_BILTY`, `LABOR_MAZDOORI`, `WEIGHING_KANTA`).
@@ -588,16 +599,16 @@ All financial and inventory computations use C# `decimal` rounded to **4 decimal
    * `DISCOUNT_WAIVER`: Settlement concession (`KASAR_WAIVER`).
 
 6. **Udhaar Khata Sign Convention & Credit Exposure (`BR-MATH-005`):**
-   * $\text{current\_balance} > 0\ (\text{DR})$: Customer owes business (Receivable) or advance paid to supplier.
-   * $\text{current\_balance} < 0\ (\text{CR})$: Business owes supplier (Payable) or customer advance receipt.
-   * $\text{credit\_exposure} = \max(\text{current\_balance}, 0) + \text{reserved\_credit}$.
-   * **Credit Check Rule:** An order cannot be confirmed if $\text{credit\_exposure} + \text{new\_order\_amount} > \text{credit\_limit}$.
+   * `current_balance > 0` (DR): Customer owes business (Receivable) or advance paid to supplier.
+   * `current_balance < 0` (CR): Business owes supplier (Payable) or customer advance receipt.
+   * `credit_exposure = max(current_balance, 0) + reserved_credit`.
+   * **Credit Check Rule:** An order cannot be confirmed if `credit_exposure + new_order_amount > credit_limit`.
 
 7. **Risk Tiers:**
-   * `LOW`: Utilization $< 0.70$ and 0 days overdue.
-   * `MEDIUM`: Utilization $0.70 - 0.89$ or $1 - 30$ days overdue.
-   * `HIGH`: Utilization $0.90 - 0.99$ or $31 - 90$ days overdue.
-   * `CRITICAL`: Utilization $\ge 1.00$ or $> 90$ days overdue.
+   * `LOW`: Utilization < 0.70 and 0 days overdue.
+   * `MEDIUM`: Utilization 0.70–0.89 or 1–30 days overdue.
+   * `HIGH`: Utilization 0.90–0.99 or 31–90 days overdue.
+   * `CRITICAL`: Utilization ≥ 1.00 or > 90 days overdue.
 
 ---
 
@@ -646,15 +657,15 @@ This monolith implementation traces directly to the requirements in [`Docs/Pdfs/
 * **`FR-CAT` (Catalog & UOM):** Hierarchical categories, two-tier UOM conversions, fractional validation, and GIN-indexed Roman Urdu aliases.
 * **`FR-INV` (Inventory & FEFO):** Multi-warehouse stock, FEFO batch allocation, explicit stock reservations, and trigger-maintained stock totals.
 * **`FR-ACC` (Udhaar Khata & FIFO Allocations):** Unified party accounts, running balance ledger entries, and automated FIFO settlement matching payments to oldest debits.
-* **`FR-ORD` (Orders & Approval Gates):** Order lifecycle management, confidence thresholds ($\ge 0.85$), credit exposure gating, and manager approvals.
+* **`FR-ORD` (Orders & Approval Gates):** Order lifecycle management, confidence thresholds (≥ 0.85), credit exposure gating, and manager approvals.
 * **`FR-BIL` (Invoicing & Wholesale Charges):** Dual-series vouchers (`00` Purchase / `01` Sale), landed cost proration, WAC recalculation, and localized charges.
 * **`FR-AI` (Agentic Ingress & Telemetry):** WhatsApp Cloud webhook HMAC verification, Whisper STT audio transcription, Groq structured JSON extraction, and live SignalR telemetry streaming.
 * **`FR-OPS` (Operational Reliability):** Transactional Outbox background processing, idempotency key deduplication, and immutable audit logging.
 
 ### Non-Functional Latency & Performance Budgets
-* **`NFR-PERF-001`:** Standard CRUD endpoints achieve $< 200\text{ ms}$ p95 latency under 50 concurrent operators.
-* **`NFR-PERF-002`:** Transactional voucher postings (`01` Sale Invoice with FEFO commit, ledger debit, and outbox insert) complete in $< 400\text{ ms}$ p95.
-* **`NFR-PERF-003`:** AI text order parsing completes in $< 3.5\text{ s}$ p95; voice note audio transcription + parsing completes in $< 6.0\text{ s}$ p95.
+* **`NFR-PERF-001`:** Standard CRUD endpoints achieve < 200 ms p95 latency under 50 concurrent operators.
+* **`NFR-PERF-002`:** Transactional voucher postings (`01` Sale Invoice with FEFO commit, ledger debit, and outbox insert) complete in < 400 ms p95.
+* **`NFR-PERF-003`:** AI text order parsing completes in < 3.5 s p95; voice note audio transcription + parsing completes in < 6.0 s p95.
 * **`NFR-SEC-001`:** 100% of tables enforce PostgreSQL engine `FORCE ROW LEVEL SECURITY`.
 * **`NFR-REL-001`:** Concurrency serialized via row-level locks (`fn_reserve_batch_stock`, `fn_apply_account_balance_delta`).
 
