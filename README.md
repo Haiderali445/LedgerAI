@@ -34,6 +34,9 @@ This repository is organized as a single modular monolith containing all design 
 | **Team Execution Plan & Sprint Roadmap** | [`Docs/Pdfs/LedgerAI_Team_Execution_Plan.pdf`](Docs/Pdfs/LedgerAI_Team_Execution_Plan.pdf) | Sprint execution milestones, responsibilities, deliverables, and timeline. |
 | **Final Year Project Proposal (Approved)** | [`Docs/Pdfs/PROPOSL _final_ledgerai.pdf`](Docs/Pdfs/PROPOSL%20_final_ledgerai.pdf) | University of Gujrat approved proposal document establishing project background, problem statement, and scope. |
 | **Backend API Host Setup & Manifest** | [`LedgerAI.Api/README.md`](LedgerAI.Api/README.md) | .NET 9 Web API setup, launch profiles, NuGet manifest, and endpoint verification guide. |
+| **Frontend Web App & Waitlist** | [`LedgerAI.Web/README.md`](LedgerAI.Web/README.md) | React 18+ Vite PWA, obsidian/navy design system, arrowed workflow engine, and waitlist page. |
+| **Production Deployment Configs** | [`netlify.toml`](netlify.toml) / [`vercel.json`](vercel.json) | Ready-to-deploy configurations for Netlify and Vercel with SPA rewrite rules. |
+| **Team Contributions & Guidelines** | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Authorship, Git branching standards, PR conventions, and engineering guidelines. |
 
 ---
 
@@ -55,6 +58,8 @@ This repository is organized as a single modular monolith containing all design 
 9. [Functional & Non-Functional Requirements Summary](#9-functional--non-functional-requirements-summary)
 10. [Technology Stack & Package Manifest](#10-technology-stack--package-manifest)
 11. [Local Development & Quick-Start Guide](#11-local-development--quick-start-guide)
+12. [Production Deployment (Netlify & Vercel)](#12-production-deployment-netlify--vercel)
+13. [Project Team & Contributions](#13-project-team--contributions)
 
 ---
 
@@ -66,40 +71,42 @@ This repository is organized as a single modular monolith containing all design 
 
 ```mermaid
 flowchart LR
-    subgraph Ingress["1. Conversational Ingress (Messy & Informal)"]
-        RawInput["WhatsApp Audio / Roman Urdu Text\n('50 bori chini bhej dein')"]
-        STT["Whisper STT Audio Transcription\n(.ogg / .wav / .mp3)"]
+    subgraph Ingress["1. Conversational Ingress"]
+        RawInput["WhatsApp Audio / Roman Urdu Text<br/>50 bori chini bhej dein"]
+        STT["Whisper STT Audio Transcription<br/>(.ogg / .wav / .mp3)"]
         RawInput --> STT
     end
 
-    subgraph Airgap["2. Strict Validation & Airgap Gates"]
-        Sanitize["TextSanitizerPipeline\n(Injection Guard & Normalizer)"]
-        LLM["IntentExtractorAgent\n(Groq LPU / JSON Schema Mode)"]
-        Gate["IntentValidationPipeline\n(Confidence >= 0.85 & Credit Check)"]
+    subgraph Airgap["2. Strict Validation and Airgap Gates"]
+        Sanitize["TextSanitizerPipeline<br/>(Injection Guard and Normalizer)"]
+        LLM["IntentExtractorAgent<br/>(Groq LPU / JSON Schema Mode)"]
+        Gate["IntentValidationPipeline<br/>(Confidence >= 0.85 and Credit Check)"]
         STT --> Sanitize --> LLM --> Gate
     end
 
     subgraph Core["3. Deterministic ERP Core (Unit of Work)"]
-        Supervisor["SupervisorAgent\n(Typed C# Tool Caller)"]
-        Services["Domain Services\n(Catalog, Inventory, Accounts, Orders, Invoicing)"]
-        Gate -->|"High Confidence & In-Credit"| Supervisor --> Services
-        Gate -.->|"Low Confidence or Over-Credit"| Approval["Human Approval Queue\n(PENDING_APPROVAL)"]
+        Supervisor["SupervisorAgent<br/>(Typed C# Tool Caller)"]
+        Services["Domain Services<br/>(Catalog, Inventory, Accounts, Orders, Invoicing)"]
+        Gate -->|"High Confidence and In-Credit"| Supervisor --> Services
+        Gate -.->|"Low Confidence or Over-Credit"| Approval["Human Approval Queue<br/>(PENDING_APPROVAL)"]
         Approval -.->|"Manager Approved"| Services
     end
 
     subgraph Engine["4. PostgreSQL 16+ Persistence Engine"]
-        Atomic["Atomic Stored Procedures\n(fn_reserve_batch_stock, fn_apply_balance_delta)"]
-        RLS["FORCE ROW LEVEL SECURITY\n(SET LOCAL app.current_tenant)"]
-        Triggers["Database Triggers & FIFO Allocations\n(trg_sync_stock_items, trg_audit_immutable)"]
+        Atomic["Atomic Stored Procedures<br/>(fn_reserve_batch_stock, fn_apply_balance_delta)"]
+        RLS["FORCE ROW LEVEL SECURITY<br/>(SET LOCAL app.current_tenant)"]
+        Triggers["Database Triggers and FIFO Allocations<br/>(trg_sync_stock_items, trg_audit_immutable)"]
         Services --> Atomic --> RLS --> Triggers
     end
 
-    subgraph Outbox["5. Transactional Outbox & Telemetry"]
+    subgraph Outbox["5. Transactional Outbox and Telemetry"]
         OutboxTable["outbox_events Table"]
         Worker["OutboxDispatcherWorker"]
-        SignalR["SignalR LedgerHub\n(Live UI Trace)"]
-        WhatsApp["WhatsApp Outbound Reply\n(Order Confirmation)"]
-        Triggers --> OutboxTable --> Worker --> SignalR & WhatsApp
+        SignalR["SignalR LedgerHub<br/>(Live UI Trace)"]
+        WhatsApp["WhatsApp Outbound Reply<br/>(Order Confirmation)"]
+        Triggers --> OutboxTable --> Worker
+        Worker --> SignalR
+        Worker --> WhatsApp
     end
 ```
 
@@ -123,12 +130,12 @@ LedgerAI is architected as a **Five-Tier Distributed System** anchored by a **Si
 ```mermaid
 flowchart TB
     subgraph Tier1["Tier 1: Presentation Layer (React 18+ Vite TypeScript PWA)"]
-        PWA_Dash["Executive Dashboard & Udhaar Khata UI"]
-        PWA_Chat["Interactive AI Chat & MediaRecorder Audio"]
-        PWA_Monitor["Live AI Decision & Telemetry Console"]
+        PWA_Dash["Executive Dashboard and Udhaar Khata UI"]
+        PWA_Chat["Interactive AI Chat and MediaRecorder Audio"]
+        PWA_Monitor["Live AI Decision and Telemetry Console"]
     end
 
-    subgraph Tier2["Tier 2: Communication & Ingress Gateway"]
+    subgraph Tier2["Tier 2: Communication and Ingress Gateway"]
         WA_Webhook["WhatsApp Cloud API Webhook (HMAC + Idempotency)"]
         STT_Pipe["Whisper STT Audio Pipeline (.ogg / .wav / .mp3)"]
         Outbox_Worker["Outbox Dispatcher BackgroundService"]
@@ -137,7 +144,7 @@ flowchart TB
     subgraph Tier3["Tier 3: Agentic AI Orchestration Layer (Isolated)"]
         Sanitizer["TextSanitizerPipeline (Prompt Injection Guard)"]
         Extractor["IntentExtractorAgent (Groq LPU / JSON Output)"]
-        ValGate["IntentValidationPipeline (Confidence & Risk Gate)"]
+        ValGate["IntentValidationPipeline (Confidence and Risk Gate)"]
         Supervisor["SupervisorAgent -> OrderAgent / LedgerAgent"]
         Router["Multi-Key Failover Router (Groq -> HuggingFace)"]
         Telemetry["AiDecisionLogger (Real-Time Pipeline Trace)"]
@@ -145,13 +152,13 @@ flowchart TB
 
     subgraph Tier4["Tier 4: Application Core (.NET 9 Modular Monolith)"]
         MW["Security Middleware (JWT, Tenant RLS Interceptor, Correlation ID)"]
-        Controllers["REST API Controllers & SignalR LedgerHub"]
+        Controllers["REST API Controllers and SignalR LedgerHub"]
         Mod_Cat["Catalog Module (Categories, UOMs, Products)"]
-        Mod_Inv["Inventory Module (FEFO Batches & Reservations)"]
-        Mod_Acc["Accounts Module (Party Register & FIFO Khata)"]
-        Mod_Ord["Orders Module (State Machine & Exposure Checks)"]
-        Mod_Bill["Invoicing Module (00 Purchase / 01 Sale & Wholesale Charges)"]
-        UoW["Unit of Work & Generic Repository"]
+        Mod_Inv["Inventory Module (FEFO Batches and Reservations)"]
+        Mod_Acc["Accounts Module (Party Register and FIFO Khata)"]
+        Mod_Ord["Orders Module (State Machine and Exposure Checks)"]
+        Mod_Bill["Invoicing Module (00 Purchase / 01 Sale and Wholesale Charges)"]
+        UoW["Unit of Work and Generic Repository"]
     end
 
     subgraph Tier5["Tier 5: Persistence Layer (PostgreSQL 16+)"]
@@ -174,10 +181,21 @@ flowchart TB
     Supervisor --> Telemetry
     Telemetry -->|"Live Trace"| Controllers
 
-    Controllers --> MW --> Mod_Cat & Mod_Inv & Mod_Acc & Mod_Ord & Mod_Bill
-    Mod_Cat & Mod_Inv & Mod_Acc & Mod_Ord & Mod_Bill --> UoW
+    Controllers --> MW
+    MW --> Mod_Cat
+    MW --> Mod_Inv
+    MW --> Mod_Acc
+    MW --> Mod_Ord
+    MW --> Mod_Bill
+    Mod_Cat --> UoW
+    Mod_Inv --> UoW
+    Mod_Acc --> UoW
+    Mod_Ord --> UoW
+    Mod_Bill --> UoW
     UoW --> DB_Tables
-    DB_Tables --- DB_RLS & DB_Triggers & DB_Funcs
+    DB_Tables --- DB_RLS
+    DB_Tables --- DB_Triggers
+    DB_Tables --- DB_Funcs
     DB_Tables -->|"outbox_events"| Outbox_Worker
     Outbox_Worker -->|"Push Events"| Controllers
     Outbox_Worker -->|"Outbound Messages"| WA_Webhook
@@ -379,6 +397,41 @@ LedgerAI/                                           # Root Repository Directory 
             │   └── WhatsAppWebhookController.cs    # Meta webhook handshake & inbound payload ingress
             └── Hubs/
                 └── LedgerHub.cs                    # Real-time SignalR WebSocket hub for UI telemetry
+│
+└── LedgerAI.Web/                                   # React 18+ Vite TypeScript Web App & Client Gateway
+    ├── README.md                                   # Frontend Setup, Architecture & Component Manifest
+    ├── package.json                                # Scripts, Dependencies (React, Lucide, Tailwind, Axios, Supabase)
+    ├── tailwind.config.ts                          # Obsidian/Navy palette (#070B14, #0B1120) & brand tokens
+    ├── vite.config.ts                              # Vite bundler configuration
+    ├── index.html                                  # App shell with Plus Jakarta Sans & JetBrains Mono fonts
+    │
+    └── src/
+        ├── components/
+        │   ├── helper/
+        │   │   └── ErrorBoundary.tsx               # Top-level React error boundary
+        │   ├── landing/                            # Modular landing components
+        │   │   ├── Navbar.tsx                      # Sticky glass navigation bar
+        │   │   ├── HeroSection.tsx                 # Short, punchy hero ("Where Sales Meets AI Automation")
+        │   │   ├── ArrowedWorkflowSection.tsx      # 5-step arrowed flow diagram with scenario toggles
+        │   │   ├── BenefitsSection.tsx             # 5 scannable Problems Saved -> Business Benefits cards
+        │   │   ├── ProductPreviewSection.tsx       # Interactive real-UI preview frame
+        │   │   └── ClosingCtaFooter.tsx            # Closing CTA card & business SaaS footer
+        │   └── ui/                                 # Reusable UI primitives (Badge, Button, Card, Input, Modal)
+        ├── contracts/                              # TypeScript contracts matching .NET 9 DTOs & DB schemas
+        ├── core/
+        │   ├── config/env.ts                       # Typed environment configuration
+        │   ├── data/baseRepository.ts              # Tri-mode BaseRepository<T> ('mock' | 'api' | 'supabase')
+        │   ├── data/supabaseClient.ts              # Supabase client initializer
+        │   ├── http/apiClient.ts                   # Axios client with JWT & tenant interceptors
+        │   ├── http/signalrClient.ts               # SignalR client with pub/sub listener patterns
+        │   └── telemetry/logger.ts                 # Dev-only telemetry logger (import.meta.env.DEV strictly gated)
+        ├── mocks/landing.mock.ts                   # Authoritative landing features, stats & testimonials
+        ├── utils/                                  # Formatting & class merging utilities (cn, currency, date)
+        ├── views/public/
+        │   ├── LandingPage.tsx                     # Master landing page view (/)
+        │   └── SoonToComePage.tsx                  # Early access waitlist view (/coming-soon)
+        ├── App.tsx                                 # Router configuration (/ and /coming-soon)
+        └── main.tsx                                # React DOM root entrypoint
 ```
 
 ---
@@ -541,23 +594,23 @@ stateDiagram-v2
 ```mermaid
 flowchart LR
     subgraph PurchaseFlow["00 Purchase Voucher Posting"]
-        P1["Create Purchase Invoice (00)"] --> P2["Prorate Capitalizable Charges\n(FREIGHT_BILTY, MAZDOORI, KANTA)"]
-        P2 --> P3["Create New StockBatch\n(Batch Landed Unit Cost)"]
-        P3 --> P4["Recalculate Product WAC\n((Q_old*C_old + Q_in*C_in) / Q_total)"]
-        P4 --> P5["Trigger Auto-Syncs stock_items\n& Posts Supplier CREDIT LedgerEntry"]
+        P1["Create Purchase Invoice 00"] --> P2["Prorate Capitalizable Charges<br/>(FREIGHT_BILTY, MAZDOORI, KANTA)"]
+        P2 --> P3["Create New StockBatch<br/>(Batch Landed Unit Cost)"]
+        P3 --> P4["Recalculate Product WAC<br/>(Q_old x C_old + Q_in x C_in) / Q_total"]
+        P4 --> P5["Trigger Auto-Syncs stock_items<br/>and Posts Supplier CREDIT LedgerEntry"]
     end
 
     subgraph SaleFlow["01 Sale Voucher Posting"]
-        S1["Create Sale Invoice (01)"] --> S2["Call fn_commit_batch_stock\n(Deducts Physical & Reserved Qty)"]
-        S2 --> S3["Record StockMovement (SALE)\n& Calculate Line COGS"]
-        S3 --> S4["Apply Charges (DELIVERY_OUTBOUND,\nWHT_236G/H, KASAR_WAIVER)"]
-        S4 --> S5["Post Customer DEBIT LedgerEntry\n& Queue Transactional Outbox"]
+        S1["Create Sale Invoice 01"] --> S2["Call fn_commit_batch_stock<br/>(Deducts Physical and Reserved Qty)"]
+        S2 --> S3["Record StockMovement SALE<br/>and Calculate Line COGS"]
+        S3 --> S4["Apply Charges DELIVERY_OUTBOUND,<br/>WHT_236G-H, KASAR_WAIVER"]
+        S4 --> S5["Post Customer DEBIT LedgerEntry<br/>and Queue Transactional Outbox"]
     end
 
     subgraph SettlementFlow["Udhaar Khata Payment Receipt"]
         R1["Receive Customer Payment"] --> R2["Post Customer CREDIT LedgerEntry"]
-        R2 --> R3["FifoPaymentAllocator Queries\nOldest Unreversed DEBIT Entries"]
-        R3 --> R4["Create LedgerAllocations &\nUpdate Invoice Status (PARTIALLY_PAID / PAID)"]
+        R2 --> R3["FifoPaymentAllocator Queries<br/>Oldest Unreversed DEBIT Entries"]
+        R3 --> R4["Create LedgerAllocations and<br/>Update Invoice Status PARTIALLY_PAID or PAID"]
     end
 ```
 
@@ -683,12 +736,12 @@ This monolith implementation traces directly to the requirements in [`Docs/Pdfs/
 | `Microsoft.EntityFrameworkCore.Design` | `9.0.2` | EF Core migration tooling (`dotnet ef migrations add`) |
 | `Microsoft.AspNetCore.SignalR` | *Built-in* | Real-time WebSocket hub (`LedgerHub`) for live telemetry and notifications |
 
-### Frontend (React 18+ PWA — Target Client)
-* **Framework:** React 18+ with TypeScript and Vite
-* **Styling:** Tailwind CSS + Lucide React Icons
-* **Real-Time Client:** `@microsoft/signalr`
-* **Data Fetching:** `@tanstack/react-query` + Axios
-* **Audio Capture:** HTML5 `MediaRecorder` API (`audio/webm`, `audio/ogg`)
+### Frontend (`LedgerAI.Web` — React 18+ Vite PWA)
+* **Framework:** React 18+ with TypeScript 5.7 and Vite 6.1
+* **Styling:** Tailwind CSS 3.4 with custom obsidian/navy surface palette (`#070B14`, `#0B1120`) and Lucide React Icons
+* **Data Access Layer:** Tri-source `BaseRepository<T>` supporting `'mock'`, `.NET 9 API` (`Axios`), and `Supabase` with automatic failover
+* **Telemetry & Logging:** Dev-only HTTP/repository logger strictly gated by `import.meta.env.DEV`
+* **Core Active Pages:** `/` (Master Landing with Arrowed Workflows & Real-UI Preview) and `/coming-soon` (Join Waitlist & Roadmap Inspector)
 
 ---
 
@@ -696,6 +749,7 @@ This monolith implementation traces directly to the requirements in [`Docs/Pdfs/
 
 ### Prerequisites
 * [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) (SDK `9.0.319+` or `10.0.403+` targeting `net9.0`)
+* [Node.js v20+](https://nodejs.org/) (tested with Node v26)
 * [PostgreSQL 16+](https://www.postgresql.org/download/) (Local or Supabase)
 
 ### Setup Instructions
@@ -706,13 +760,21 @@ This monolith implementation traces directly to the requirements in [`Docs/Pdfs/
    cd LedgerAI
    ```
 
-2. **Database Initialization (Optional manual SQL setup):**
+2. **Frontend Web Setup (`LedgerAI.Web`):**
+   ```bash
+   cd LedgerAI.Web
+   npm install
+   npm run dev      # Runs local Vite server at http://localhost:5173
+   npm run build    # Compiles production TypeScript bundle (0 errors)
+   ```
+
+3. **Database Initialization (Optional manual SQL setup):**
    Execute `Docs/Schemas/LedgerAI_Schema_v2.sql` inside your PostgreSQL instance:
    ```bash
    psql -U postgres -d postgres -f Docs/Schemas/LedgerAI_Schema_v2.sql
    ```
 
-3. **Configure Connection Strings & Keys:**
+4. **Configure Connection Strings & Keys:**
    Update `LedgerAI.Api/appsettings.Development.json` with your credentials:
    ```json
    {
@@ -728,23 +790,59 @@ This monolith implementation traces directly to the requirements in [`Docs/Pdfs/
    }
    ```
 
-4. **Restore & Build the Application:**
+5. **Restore & Build the Backend API:**
    ```bash
-   cd LedgerAI.Api
+   cd ../LedgerAI.Api
    dotnet restore
    dotnet build
    ```
 
-5. **Run the API:**
+6. **Run the API:**
    ```bash
    dotnet run
    ```
 
-6. **Verify Running Endpoints:**
+7. **Verify Running Endpoints:**
    * **System Metadata Endpoint:** `GET http://localhost:5284/api/metadata` (or `https://localhost:7274/api/metadata`)
    * **Health Check:** `GET http://localhost:5284/health`
    * **Scalar API Documentation:** `http://localhost:5284/scalar/v1`
    * **OpenAPI Specification:** `http://localhost:5284/openapi/v1.json`
+
+---
+
+## 12. Production Deployment (Netlify & Vercel)
+
+LedgerAI is architected for zero-downtime, continuous deployment across modern cloud platforms.
+
+### Option A: Netlify Deployment
+LedgerAI includes pre-configured [`netlify.toml`](netlify.toml) and [`LedgerAI.Web/public/_redirects`](LedgerAI.Web/public/_redirects) for automatic Vite builds and SPA wildcard rewrites.
+
+* **Repository Root Deployment:**
+  * **Base Directory:** `LedgerAI.Web`
+  * **Build Command:** `npm run build`
+  * **Publish Directory:** `dist`
+  * **Node Version:** `20+`
+* **Single-Page Application (SPA) Rule:** Automatically redirects all unknown subpaths (`/*`) to `/index.html` with HTTP 200 to support React Router v6 cleanly.
+
+### Option B: Vercel Deployment
+LedgerAI includes root [`vercel.json`](vercel.json) and [`vercel.yaml`](vercel.yaml) along with [`LedgerAI.Web/vercel.json`](LedgerAI.Web/vercel.json):
+
+* **Build Command:** `npm --prefix LedgerAI.Web run build`
+* **Output Directory:** `LedgerAI.Web/dist`
+* **Install Command:** `npm --prefix LedgerAI.Web install`
+* **Security Headers:** Strict Content Security, `X-Frame-Options: DENY`, and `X-Content-Type-Options: nosniff` are applied automatically.
+
+---
+
+## 13. Project Team & Contributions
+
+LedgerAI is authored and maintained by the Final Year Project engineering team at the University of Gujrat, Pakistan:
+
+* **Haider Ali** — Lead Architect & Backend / AI Engineering
+* **Ibtisam Kashif** — Full-Stack & Inventory Systems
+* **Fazina Mukhtar** — Frontend Engineering & Quality Assurance
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for full contribution guidelines, branch standards, and code review criteria.
 
 ---
 

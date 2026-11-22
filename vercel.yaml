@@ -1,0 +1,17 @@
+# Vercel Production Configuration for LedgerAI Monolith
+buildCommand: "npm --prefix LedgerAI.Web run build"
+outputDirectory: "LedgerAI.Web/dist"
+installCommand: "npm --prefix LedgerAI.Web install"
+framework: "vite"
+rewrites:
+  - source: "/(.*)"
+    destination: "/index.html"
+headers:
+  - source: "/(.*)"
+    headers:
+      - key: "X-Frame-Options"
+        value: "DENY"
+      - key: "X-Content-Type-Options"
+        value: "nosniff"
+      - key: "Referrer-Policy"
+        value: "strict-origin-when-cross-origin"
