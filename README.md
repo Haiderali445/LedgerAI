@@ -526,6 +526,54 @@ erDiagram
      gross_profit = (subtotal - discount) - total_cogs - fulfillment_and_waiver_costs
      ```
 
+### 5.4 Hybrid Database Setup & Seed Workflow
+
+LedgerAI uses a **hybrid Code-First + SQL Hardening** workflow:
+
+1. Run `dotnet ef database update` to create/update the 21 EF-managed `snake_case` tables, computed columns, and baseline indexes.
+2. For a fresh database or reset created through EF Core migrations, immediately run `Docs/Schemas/patch-update-efcore.sql` in PostgreSQL/Supabase. It installs FORCE RLS policies, stock synchronization and guard triggers, immutable audit logging, ledger allocation validation, security-invoker views, composite tenant/batch-tuple foreign keys, CHECK constraints, and atomic `fn_*` stock/credit functions.
+
+The patch is **only required for the EF Core Code-First path**; it is not required when bootstrapping directly from `Docs/Schemas/LedgerAI_Schema_v2.sql`.
+
+Verify RLS with:
+
+```sql
+SELECT relname AS table_name, relrowsecurity AS rls_enabled,
+       relforcerowsecurity AS rls_forced
+FROM pg_class
+WHERE relkind = 'r'
+  AND relnamespace = 'public'::regnamespace
+  AND relname IN (
+    'tenants','users','categories','units_of_measure','products','warehouses',
+    'stock_items','stock_batches','stock_movements','orders','order_items',
+    'stock_reservations','accounts','invoices','invoice_items','invoice_charges',
+    'ledger_entries','ledger_allocations','inbound_messages','outbox_events','audit_logs'
+  )
+ORDER BY relname;
+```
+
+Set `app.current_tenant` before seeding or manual tenant-scoped writes:
+`SELECT set_config('app.current_tenant', '<tenant-id>', false);`
+
+### 5.5 Module Entities, EF Configuration & Seed Data
+
+Entities remain inside bounded modules under `LedgerAI.Api/src/Modules/*/`. Module-specific and shared `IEntityTypeConfiguration<T>` mappings may live beside entities or in `LedgerAI.Api/src/Data/Configurations/`, and are discovered through `ApplyConfigurationsFromAssembly(typeof(LedgerDbContext).Assembly)`. Existing names and column mappings must remain unchanged to avoid migration drift.
+
+The database/connection layer in `LedgerAI.Api/src/Data/Interceptors/` and `LedgerAI.Api/src/Data/Configuration/` logs connection/open/close/failure events, tenant context, write operations, and pending migrations through `ILogger<T>` without logging credentials or secrets.
+
+For local development, enable:
+
+```json
+{
+  "SeedData": {
+    "Enabled": true,
+    "IncludeMockData": true
+  }
+}
+```
+
+The idempotent `DbSeeder` creates a deterministic master tenant (`tenant_code=MASTER-PKR`, PKR currency), Owner/Admin/Operator users, and interlinked mock data for catalog, warehouses, stock, accounts, orders, reservations, invoices, ledger entries, allocations, inbound messages, outbox events, and audit logs. It sets `app.current_tenant` inside the seed transaction and must never be enabled implicitly in production.
+
 ---
 
 ## 6. End-to-End System Workflows & Visual Diagrams
@@ -768,11 +816,18 @@ This monolith implementation traces directly to the requirements in [`Docs/Pdfs/
    npm run build    # Compiles production TypeScript bundle (0 errors)
    ```
 
-3. **Database Initialization (Optional manual SQL setup):**
-   Execute `Docs/Schemas/LedgerAI_Schema_v2.sql` inside your PostgreSQL instance:
+3. **Database Initialization:**
+   Choose one bootstrap path:
    ```bash
+   # EF Core Code-First path
+   cd LedgerAI.Api
+   dotnet ef database update
+   psql "$CONNECTION_STRING" -f ../Docs/Schemas/patch-update-efcore.sql
+
+   # Standalone SQL path (do not run the EF patch afterward)
    psql -U postgres -d postgres -f Docs/Schemas/LedgerAI_Schema_v2.sql
    ```
+   The patch is required only for databases created/reset through EF Core migrations.
 
 4. **Configure Connection Strings & Keys:**
    Update `LedgerAI.Api/appsettings.Development.json` with your credentials:
